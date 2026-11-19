@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>BTCINR live stats</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:640px;margin:2rem auto;padding:0 1rem}
+table{border-collapse:collapse;width:100%}
+td{padding:.45rem;border-bottom:1px solid #ddd}
+td:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.muted{color:#666;font-size:.9rem}
+</style></head>
+<body>
+<h2>BTCINR 1-minute stats</h2>
+<label>Horizon
+  <select id="h">
+    <option value="60">60 min</option>
+    <option value="240">4 hours</option>
+    <option value="1440">1 day</option>
+  </select>
+</label>
+<p class="muted" id="status">Loading…</p>
+<table id="t"></table>
+<p class="muted">Descriptive statistics from the logged mark price. Not a signal or a price prediction.</p>
+<script>
+const inr = n => n == null ? "–" : "₹" + Math.round(n).toLocaleString("en-IN");
+const usd = (n, fx) => (n == null || !fx) ? "–" : "$" + Math.round(n / fx).toLocaleString("en-US");
+
+async function load() {
+  const h = document.getElementById("h").value;
+  const st = document.getElementById("status");
+  try {
+    const d = await (await fetch("/api/data?h=" + h)).json();
+    if (d.error) { st.textContent = d.error; return; }
+    const rows = [
+      ["Last mark (INR)", inr(d.last_inr)],
+      ["Last mark (USD)", usd(d.last_inr, d.usd_inr)],
+      ["USD/INR", d.usd_inr ? d.usd_inr.toFixed(2) : "–"],
+      ["High / Low (INR)", inr(d.high) + " / " + inr(d.low)],
+      ["Sigma per minute", (d.sigma_min * 100).toFixed(3) + "%"],
+      ["±1σ over " + d.horizon + " min (INR)", inr(d.band_low) + " to " + inr(d.band_high)],
+      ["±1σ over " + d.horizon + " min (USD)", usd(d.band_low, d.usd_inr) + " to " + usd(d.band_high, d.usd_inr)],
+    ];
+    document.getElementById("t").innerHTML = rows.map(([a, b]) => `<tr><td>${a}</td><td>${b}</td></tr>`).join("");
+    st.textContent = "Rows " + d.rows + " · latest " + d.last_time + " · updated " + new Date().toLocaleTimeString();
+  } catch (e) {
+    st.textContent = "Could not reach the server: " + e.message;
+  }
+}
+
+document.getElementById("h").onchange = load;
+load();
+setInterval(load, 60000);
+</script>
+</body></html>
