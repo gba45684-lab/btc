@@ -6,9 +6,11 @@ const REST = "https://api.sharkexchange.in";
 const WS_URL = "https://fawss.sharkexchange.in/";
 const PAIR = "BTCINR";
 const FILE = "btcinr_live.csv";
+const MARK_FILE = "btcinr_markprice.csv";
 const SNAPSHOT_MS = 60_000;
 
 if (!existsSync(FILE)) writeFileSync(FILE, "time_utc,source,payload\n");
+if (!existsSync(MARK_FILE)) writeFileSync(MARK_FILE, "time_utc,mark_inr,index_inr,funding_rate,next_funding_ms\n");
 
 const log = (source, payload) => {
   const line = `${new Date().toISOString()},${source},${JSON.stringify(payload).replaceAll('"', "'")}`;
@@ -30,7 +32,13 @@ socket.on("connect", () => {
   console.log("websocket connected");
   socket.emit("subscribe", { params: [`${PAIR.toLowerCase()}@markPrice`, `${PAIR.toLowerCase()}@aggTrade`] });
 });
-socket.on("markPriceUpdate", (d) => { log("markPrice", d); console.log("markPrice", JSON.stringify(d)); });
+// Mark-price fields (confirmed from live output): p = mark INR, i = index INR,
+// r = current funding rate, T = next funding time (ms), E = event time (ms).
+socket.on("markPriceUpdate", (d) => {
+  const row = [new Date(Number(d.E)).toISOString(), d.p, d.i, d.r, d.T].join(",");
+  appendFileSync(MARK_FILE, row + "\n");
+  console.log("markPrice", row);
+});
 socket.on("aggTrade", (d) => log("aggTrade", d));
 socket.on("disconnect", (reason) => console.log("websocket disconnected:", reason));
 socket.on("connect_error", (e) => {
