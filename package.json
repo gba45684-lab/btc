@@ -1,0 +1,17 @@
+{
+  "name": "btcinr-live",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Public read-only BTCINR market data logger for Shark Exchange. No keys, no orders.",
+  "type": "module",
+  "main": "btcinr_live.mjs",
+  "scripts": {
+    "start": "node btcinr_live.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "socket.io-client": "^4.7.5"
+  }
+}
