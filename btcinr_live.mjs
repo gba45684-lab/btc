@@ -15,16 +15,28 @@ const log = (source, payload) => {
   appendFileSync(FILE, line + "\n");
 };
 
-// 1) Live mark-price and trade stream (websocket)
-const socket = io(WS_URL);
+// 1) Live mark-price and trade stream (websocket).
+// Forced to the websocket transport (the polling fallback failed in testing) with
+// backoff, so a failing endpoint logs a few lines instead of a flood.
+const socket = io(WS_URL, {
+  transports: ["websocket"],
+  reconnectionDelay: 5_000,
+  reconnectionDelayMax: 60_000,
+  timeout: 10_000,
+});
+let wsErrors = 0;
 socket.on("connect", () => {
+  wsErrors = 0;
   console.log("websocket connected");
   socket.emit("subscribe", { params: [`${PAIR.toLowerCase()}@markPrice`, `${PAIR.toLowerCase()}@aggTrade`] });
 });
 socket.on("markPriceUpdate", (d) => { log("markPrice", d); console.log("markPrice", JSON.stringify(d)); });
 socket.on("aggTrade", (d) => log("aggTrade", d));
-socket.on("disconnect", () => console.log("websocket disconnected, socket.io will retry"));
-socket.on("connect_error", (e) => console.error("websocket error:", e.message));
+socket.on("disconnect", (reason) => console.log("websocket disconnected:", reason));
+socket.on("connect_error", (e) => {
+  wsErrors += 1;
+  if (wsErrors <= 3 || wsErrors % 20 === 0) console.error(`websocket error #${wsErrors}:`, e.message);
+});
 
 // 2) 24h ticker snapshot every minute (REST)
 async function snapshot() {
