@@ -36,3 +36,11 @@ Mark-price field meanings were confirmed from live output: `p` mark (INR), `i` i
 - The websocket transport is forced because the polling fallback returned HTTP 400 in testing.
 - These endpoints come from the Shark Exchange documentation and SDK examples. Check them against the current docs before relying on them.
 - Keep API keys out of this repo. Add a `.env` file to `.gitignore` if you ever use one.
+
+## One-minute file
+
+After the logger has run, build `btcinr_1min.csv` (last mark-price row of each minute):
+
+```bash
+node make-1min.mjs
+```
