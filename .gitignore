@@ -2,3 +2,4 @@ node_modules/
 btcinr_live.csv
 .env
 btcinr_markprice.csv
+btcinr_1min.csv
