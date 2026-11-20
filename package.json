@@ -6,12 +6,14 @@
   "type": "module",
   "main": "btcinr_live.mjs",
   "scripts": {
-    "start": "node btcinr_live.mjs"
+    "start": "node btcinr_live.mjs",
+    "worker": "node worker/worker.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "dependencies": {
+    "pg": "^8.23.1",
     "socket.io-client": "^4.7.5"
   }
 }
